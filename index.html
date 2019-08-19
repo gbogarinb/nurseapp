@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>NurseApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+        </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"
+        integrity="sha256-4iQZ6BVL4qNKlQ27TExEhBN1HFPvAvAMbFavKKosSWQ=" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
+
+    <script type="text/javascript">
+        const createPatient = function (e) {
+            e.preventDefault();
+            console.log("Create clicked!");
+            const insuranceNumber = $("#insuranceNumber1").val();
+            const name = $("#name1").val();
+            const birthdate = moment($("#birthdate").val()).format("MM-DD-YYYY");
+
+            // Query to execute against the db to create a person's record.
+            const query =
+                'mutation createOrUpdatePerson($person:PersonInput!) {createOrUpdatePerson(input:{person:$person}){clientMutationId}}';
+
+            // Payload with variables.
+            const body = {
+                query: query,
+                variables: {
+                    person: {
+                        insuranceNumber,
+                        name,
+                        birthdate
+                    }
+                }
+            }
+
+            // Request.
+            $.ajax({
+                type: "POST",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (data) {
+                    console.log("Response: " + JSON.stringify(data));
+
+                    // Alert to indicate success or error.
+                    const alert = $(
+                        '<div class="alert alert-dismissible fade show" role="alert"></div>'
+                    )
+                        .append(
+                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
+                        );
+
+                    let alertClass = "alert-success";
+                    if ("errors" in data) {
+                        alert.prepend(data.errors[0].message);
+                        alertClass = "alert-danger";
+                    } else {
+                        alert.prepend("Patient added or updated correctly.");
+                    }
+                    alert.addClass(alertClass);
+                    $("#accordionParent").before(alert);
+
+                    // To close the alert after a few seconds.
+                    setTimeout(function () {
+                        alert.alert('close');
+                    }, 5000);
+                },
+            });
+        };
+
+        const deletePatient = function (e) {
+            e.preventDefault();
+            console.log("Delete patient clicked!");
+            const insuranceNumber = $("#insuranceNumber2").val();
+
+            // Query to execute against the db to create a person's record.
+            const query =
+                'mutation deletePersonByInsuranceNumber($insuranceNumber: String!) {deletePersonByInsuranceNumber(input: { insuranceNumber: $insuranceNumber }) {clientMutationId}}';
+
+            // Payload with variables.
+            const body = {
+                query: query,
+                variables: {
+                    insuranceNumber
+                }
+            }
+
+            // Request.
+            $.ajax({
+                type: "POST",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (data) {
+                    console.log("Response: " + JSON.stringify(data));
+
+                    // Alert to indicate success or error.
+                    const alert = $(
+                        '<div class="alert alert-dismissible fade show" role="alert"></div>'
+                    )
+                        .append(
+                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
+                        );
+
+                    let alertClass = "alert-success";
+                    if ("errors" in data) {
+                        alert.prepend(data.errors[0].message);
+                        alertClass = "alert-danger";
+                    } else {
+                        alert.prepend("Patient deleted.");
+                    }
+                    alert.addClass(alertClass);
+                    $("#accordionParent").before(alert);
+
+                    // To close the alert after a few seconds.
+                    setTimeout(function () {
+                        alert.alert('close');
+                    }, 5000);
+                },
+            });
+        };
+
+        const searchPatient = function (e) {
+            if (e) e.preventDefault();
+
+            console.log("Search patient clicked!");
+            const insuranceNumber = $("#insuranceNumber3").val();
+
+            // Query to execute against the db to add a visit record.
+            const query =
+                'query personByInsuranceNumber($insuranceNumber:String!) {personByInsuranceNumber(insuranceNumber: $insuranceNumber) {name,birthdate,personMedicalChecksByPersonInsuranceNumber {nodes {id,bloodPressureD,bloodPressureS,checkDate,heartRate}}}}';
+
+            // Payload with variables.
+            const body = {
+                query: query,
+                variables: {
+                    insuranceNumber
+                }
+            }
+
+            // Request.
+            $.ajax({
+                type: "POST",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (data) {
+                    console.log("Response: " + JSON.stringify(data));
+
+                    // Alert to indicate success or error.
+                    const alert = $(
+                        '<div class="alert alert-dismissible fade show" role="alert"></div>'
+                    )
+                        .append(
+                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
+                        );
+
+                    let alertClass = "alert-success";
+                    let showAlert = true;
+                    if ("errors" in data) {
+                        alert.prepend(data.errors[0].message);
+                        alertClass = "alert-danger";
+                    } else if (data.data.personByInsuranceNumber == null) {
+                        alertClass = "alert-warning";
+                        alert.prepend("Patient not found.");
+                    } else {
+                        // Don't show the alert if a patient was found.
+                        showAlert = false;
+
+                        // Fill the patient's information fields.
+                        const patient = data.data.personByInsuranceNumber;
+                        $("#name2").val(patient.name);
+                        $("#age").val(parseInt(moment.duration(moment().diff(moment(patient.birthdate))).asYears()));
+
+                        // Fill the visits table.
+                        const table = $("#visitsTable > tbody");
+                        table.empty();
+
+                        const visits = patient.personMedicalChecksByPersonInsuranceNumber.nodes;
+                        visits.forEach(visit => {
+                            const tr = $("<tr data-></tr>");
+                            const deleteButton = $('<td><button type="submit" class="btn btn-sm btn-outline-danger" data-id="' + visit.id + '">Delete</button></td>');
+
+                            deleteButton.find("button").click(function (e) {
+                                deleteVisit(parseInt(e.currentTarget.dataset.id));
+                            });
+                            const color = bloodPressureColor(visit.bloodPressureS, visit.bloodPressureD);
+                            tr.append('<td class="' + color + '">' + visit.bloodPressureS + "</td>")
+                                .append('<td class="' + color + '">' + visit.bloodPressureD + "</td>")
+                                .append('<td class="' + heartRateColor(visit.heartRate) + '">' + visit.heartRate + "</td>")
+                                .append('<td>' + moment(visit.checkDate).format("DD-MM-YYYY") + "</td>")
+                                .append(deleteButton);
+                            table.append(tr);
+                        });
+
+                        updateChart(visits);
+                    }
+
+                    if (showAlert) {
+                        alert.addClass(alertClass);
+                        $("#accordionParent").before(alert);
+
+                        // To close the alert after a few seconds.
+                        setTimeout(function () {
+                            alert.alert('close');
+                        }, 5000);
+                    }
+                },
+            });
+        };
+
+        const addVisit = function (e) {
+            e.preventDefault();
+            console.log("Visit clicked!");
+            const personInsuranceNumber = $("#insuranceNumber3").val();
+            const bloodPressureS = parseInt($("#systolic").val());
+            const bloodPressureD = parseInt($("#diastolic").val());
+            const heartRate = parseInt($("#heartRate").val());
+
+            const checkDate = moment($("#checkDate").val()).format("MM-DD-YYYY");
+
+            // Query to execute against the db to add a visit record.
+            const query =
+                'mutation createPersonMedicalCheck($personMedicalCheck:PersonMedicalCheckInput!) {createPersonMedicalCheck(input:{personMedicalCheck:$personMedicalCheck}){clientMutationId}}';
+
+            // Payload with variables.
+            const body = {
+                query: query,
+                variables: {
+                    personMedicalCheck: {
+                        personInsuranceNumber,
+                        bloodPressureS,
+                        bloodPressureD,
+                        heartRate,
+                        checkDate
+                    }
+                }
+            }
+
+            // Request.
+            $.ajax({
+                type: "POST",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (data) {
+                    console.log("Response: " + JSON.stringify(data));
+
+                    // Alert to indicate success or error.
+                    const alert = $('<div class="alert alert-dismissible fade show" role="alert"></div>')
+                        .append('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
+
+                    let alertClass = "alert-success";
+                    if ("errors" in data) {
+                        alert.prepend(data.errors[0].message);
+                        alertClass = "alert-danger";
+                    } else {
+                        alert.prepend("Visit added correctly.");
+
+                        // Update the visits table.
+                        searchPatient();
+                    }
+                    alert.addClass(alertClass);
+                    $("#accordionParent").before(alert);
+
+                    // To close the alert after a few seconds.
+                    setTimeout(function () {
+                        alert.alert('close');
+                    }, 5000);
+                },
+            });
+        };
+
+        const deleteVisit = function (id) {
+            // Query to execute against the db to delete a person's visit record.
+            const query =
+                'mutation deletePersonMedicalCheckById($id: Int!) {deletePersonMedicalCheckById(input: {id: $id}) {clientMutationId}}';
+
+            // Payload with variables.
+            const body = {
+                query: query,
+                variables: { id }
+            }
+
+            // Request.
+            $.ajax({
+                type: "POST",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                data: JSON.stringify(body),
+                dataType: "json",
+                success: function (data) {
+                    console.log("Response: " + JSON.stringify(data));
+
+                    // Update.
+                    searchPatient();
+                },
+            });
+        };
+
+        const bloodPressureColor = function (s, d) {
+            return (s <= 120 && d >= 80) ? "alert-success" : "alert-danger";
+        };
+
+        const heartRateColor = function (r) {
+            return (r >= 60 && r <= 100) ? "alert-success" : "alert-danger";
+        };
+
+        const updateChart = function (data) {
+            const color = Chart.helpers.color;
+
+            const sData = [];
+            const dData = [];
+            const bloodLabels = [];
+            const heartData = [];
+            const heartLabels = [];
+
+            data.forEach(visit => {
+                sData.push({ x: visit.checkDate, y: visit.bloodPressureS });
+                dData.push({ x: visit.checkDate, y: visit.bloodPressureD });
+                heartData.push({ x: visit.checkDate, y: visit.heartRate });
+                bloodLabels.push(visit.checkDate);
+            });
+
+            // Sort.
+            sData.sort(function (a, b) {
+                return moment(a.x) < moment(b.x) ? 1 :
+                    moment(a.x) == moment(b.x) ? 0 : -1;
+            });
+            dData.sort(function (a, b) {
+                return moment(a.x) < moment(b.x) ? 1 :
+                    moment(a.x) == moment(b.x) ? 0 : -1;
+            });
+            heartData.sort(function (a, b) {
+                return moment(a.x) < moment(b.x) ? 1 :
+                    moment(a.x) == moment(b.x) ? 0 : -1;
+            });
+
+            const conf = {
+                type: "line",
+                data: {
+                    datasets: [{
+                        yAxisID: "mmHg",
+                        label: "Systolic",
+                        data: sData,
+                        fill: false,
+                        backgroundColor: color("orange").alpha(0.5).rgbString(),
+                        borderColor: color("orange").rgbString()
+                    }, {
+                        yAxisID: "mmHg",
+                        label: "Diastolic",
+                        data: dData,
+                        fill: false,
+                        backgroundColor: color("green").alpha(0.5).rgbString(),
+                        borderColor: color("green").rgbString()
+                    }, {
+                        yAxisID: "bpm",
+                        label: "Heart Rate",
+                        data: heartData,
+                        fill: false,
+                        borderDash: [5],
+                        borderWidth: 5,
+                        backgroundColor: color("red").alpha(0.5).rgbString(),
+                        borderColor: color("red").rgbString()
+                    }]
+                }, options: {
+                    elements: {
+                        line: {
+                            tension: 0
+                        }
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Date'
+                            }
+                        }], yAxes: [{
+                            id: "mmHg",
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'mmHg'
+                            }
+                        }, {
+                            id: "bpm",
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'bpm'
+                            }
+                        }]
+
+                    }
+                }
+            };
+
+            const ctx = $("#visitsChart");
+            const chart = new Chart(ctx, conf);
+        }
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        const generateRandomData = function () {
+            const personInsuranceNumber = $("#insuranceNumber3").val();
+
+            for (let index = 0; index < 50; index++) {
+                const bloodPressureS = getRandomInt(115, 122);
+                const bloodPressureD = getRandomInt(78, 85);
+                const heartRate = getRandomInt(50, 120);
+
+                const checkDate = moment().subtract(index, 'days');
+
+                // Query to execute against the db to add a visit record.
+                const query =
+                    'mutation createPersonMedicalCheck($personMedicalCheck:PersonMedicalCheckInput!) {createPersonMedicalCheck(input:{personMedicalCheck:$personMedicalCheck}){clientMutationId}}';
+
+                // Payload with variables.
+                const body = {
+                    query: query,
+                    variables: {
+                        personMedicalCheck: {
+                            personInsuranceNumber,
+                            bloodPressureS,
+                            bloodPressureD,
+                            heartRate,
+                            checkDate
+                        }
+                    }
+                }
+
+                // Request.
+                $.ajax({
+                    type: "POST",
+                    url: "/graphql",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    data: JSON.stringify(body),
+                    dataType: "json",
+                    success: function (data) { },
+                });
+            }
+
+            setTimeout(function () {
+                searchPatient();
+            }, 1000);
+        }
+
+        $(document).ready(function (e) {
+            console.log("Ready!");
+
+            // To control the creation or update of a patient's record.
+            $("#createPatient").click(createPatient);
+            $("#deletePatient").click(deletePatient);
+            $("#searchPatient").click(searchPatient);
+            $("#addVisit").click(addVisit);
+            $("#generateData").click(e => { e.preventDefault(); generateRandomData(); });
+        });
+    </script>
+</head>
+
+<body>
+    <div class="text-center">
+        <h1>NURSE APP</h1>
+    </div>
+    <div class="accordion" id="accordionParent">
+        <div class="card">
+            <div class="card-header" id="createHeading">
+                <h2 class="mb-0">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#createCollapse"
+                        aria-expanded="false" aria-controls="createCollapse">
+                        Create or Update Patient
+                    </button>
+                </h2>
+            </div>
+            <div id="createCollapse" class="collapse" aria-labelledby="createHeading" data-parent="#accordionParent">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="insuranceNumber1"
+                                placeholder="Enter insurance number">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="name1" placeholder="Enter name">
+                        </div>
+                        <div class="form-group">
+                            <input type="date" class="form-control" id="birthdate" placeholder="Enter birthdate">
+                        </div>
+                        <button id="createPatient" type="submit" class="btn btn-primary">Create or Update</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" id="deleteHeading">
+                <h2 class="mb-0">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#deleteCollapse"
+                        aria-expanded="false" aria-controls="deleteCollapse">
+                        Delete Patient
+                    </button>
+                </h2>
+            </div>
+            <div id="deleteCollapse" class="collapse" aria-labelledby="deleteHeading" data-parent="#accordionParent">
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="insuranceNumber2"
+                                placeholder="Enter insurance number">
+                        </div>
+                        <button id="deletePatient" type="submit" class="btn btn-primary bg-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header" id="headingTwo">
+                <h2 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                        data-target="#informationCollapse" aria-expanded="false" aria-controls="informationCollapse">
+                        Visit Information
+                    </button>
+                </h2>
+            </div>
+            <div id="informationCollapse" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionParent">
+                <div class="card-body">
+                    <form class="form-inline">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="insuranceNumber3"
+                                placeholder="Enter insurance number">
+                        </div>
+                        <button id="searchPatient" type="submit" class="btn btn-primary mx-sm-3">Search</button>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="name2" placeholder="Name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control mx-sm-3" id="age" placeholder="Age" readonly>
+                        </div>
+                    </form>
+                    <hr>
+                    </hr>
+                    <div id="visitRecords" class="collapse show" style="max-height: 300px; overflow: auto;">
+                        <table id="visitsTable" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Systolic Pressure</th>
+                                    <th>Diastolic Pressure</th>
+                                    <th>Heart Rate</th>
+                                    <th>Date</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr>
+                    </hr>
+                    <form class="form-inline">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="systolic"
+                                placeholder="Enter systolic blood pressure">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control mx-sm-3" id="diastolic"
+                                placeholder="Enter diastolic blood pressure">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="heartRate" placeholder="Enter heart rate">
+                        </div>
+                        <div class="form-group">
+                            <input type="date" class="form-control mx-sm-3" id="checkDate" placeholder="Enter date">
+                        </div>
+                        <button id="addVisit" type="submit" class="btn btn-primary mx-sm-3">Add</button>
+                        <button id="generateData" type="submit" class="btn btn-primary mx-sm-3">Generate Random
+                            Data</button>
+                    </form>
+                </div>
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <canvas id="visitsChart"></canvas>
+                </div>
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <canvas id="heartChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
