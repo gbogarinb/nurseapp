@@ -15,7 +15,7 @@ app.get("/nurseapp", function (request, response) {
 
 app.use(
     postgraphile(
-        process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/nurseapp",
+        process.env.DATABASE_URL || "postgres://postgres:postgres@database-1.c8mdbevndvuf.sa-east-1.rds.amazonaws.com:5432/nurseapp",
         "public", {
             watchPg: true,
             graphiql: true,
